@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome - Fitness Clicker</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body class="bg-black min-h-screen flex flex-col items-center justify-center text-white" style="font-family: 'Press Start 2P', cursive;">
+
+<h1 class="text-4xl md:text-5xl text-yellow-400 mb-6 text-center">FITNESS CLICKER</h1>
+<p class="text-center text-gray-400 max-w-md mb-8">
+  Welcome to Fitness Clicker! Click to earn points, purchase upgrades, unlock milestones, and prestige to become unstoppable!
+</p>
+
+<a href="{% url 'index' %}" class="bg-red-600 text-white px-8 py-4 rounded-lg border-4 border-yellow-400 hover:bg-red-700 transition-shadow shadow-md">
+  START GAME
+</a>
+
+</body>
+</html>

@@ -4,95 +4,110 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import json
 
-# In-memory storage (replace with database models in production)
+# In-memory game state
 game_state = {
     'clicks': 0,
     'clicks_per_click': 1,
-    'upgrades_purchased': []
+    'upgrades': {},  # {'Yoga Mat': 1, ...}
+    'notifications': []
 }
 
-# Define upgrade tiers
+# Upgrades list
 UPGRADES = [
-    {'name': 'Yoga Mat', 'cost': 25, 'multiplier': 2, 'icon': ''},
-    {'name': 'Jump Rope', 'cost': 50, 'multiplier': 4},
-    {'name': 'Dumbbells', 'cost': 100, 'multiplier': 8},
-    {'name': 'Kettlebell', 'cost': 200, 'multiplier': 16},
-    {'name': 'Barbell', 'cost': 400, 'multiplier': 32},
-    {'name': 'Power Rack', 'cost': 800, 'multiplier': 64},
+    {'name': 'Yoga Mat', 'base_cost': 25, 'multiplier': 2, 'icon': 'yoga.png'},
+    {'name': 'Jump Rope', 'base_cost': 50, 'multiplier': 4, 'icon': 'rope.png'},
+    {'name': 'Dumbbells', 'base_cost': 100, 'multiplier': 8, 'icon': 'dumbbell.png'},
+    {'name': 'Kettlebell', 'base_cost': 200, 'multiplier': 16, 'icon': 'kettlebell.png'},
+    {'name': 'Barbell', 'base_cost': 400, 'multiplier': 32, 'icon': 'barbell.png'},
 ]
 
+def welcome_view(request):
+    return render(request, 'welcome.html')
+
 def game_view(request):
-    """Render the main game page"""
-    # Calculate available upgrades
-    available_upgrades = []
-    for upgrade in UPGRADES:
-        if upgrade['name'] not in game_state['upgrades_purchased']:
-            available_upgrades.append(upgrade)
-    
+    # Calculate upgrades with level and lock state
+    upgrades = []
+    for i, u in enumerate(UPGRADES):
+        level = game_state['upgrades'].get(u['name'], 0)
+        # Locked if previous upgrade not purchased and not first
+        locked = False
+        if i > 0 and game_state['upgrades'].get(UPGRADES[i-1]['name'], 0) == 0:
+            locked = True
+        upgrades.append({**u, 'level': level, 'locked': locked, 'cost': int(u['base_cost'] * (1.5 ** level))})
+
     context = {
         'clicks': game_state['clicks'],
         'clicks_per_click': game_state['clicks_per_click'],
-        'upgrades': available_upgrades,
-        'purchased_upgrades': game_state['upgrades_purchased']
+        'upgrades': upgrades,
+        'notifications': game_state['notifications'][-5:],
     }
-    return render(request, 'game.html', context)
+    return render(request, 'index.html', context)
 
 @csrf_exempt
 @require_POST
 def click(request):
-    """Handle click events and update the counter"""
     game_state['clicks'] += game_state['clicks_per_click']
-    
-    # Check for available upgrades
-    available_upgrades = []
-    for upgrade in UPGRADES:
-        if upgrade['name'] not in game_state['upgrades_purchased'] and game_state['clicks'] >= upgrade['cost']:
-            available_upgrades.append(upgrade)
-    
-    return JsonResponse({
-        'clicks': game_state['clicks'],
-        'clicks_per_click': game_state['clicks_per_click'],
-        'available_upgrades': available_upgrades
-    })
-
-def reset(request):
-    """Reset the game counter"""
-    game_state['clicks'] = 0
-    game_state['clicks_per_click'] = 1
-    game_state['upgrades_purchased'] = []
-    return JsonResponse({
-        'clicks': game_state['clicks'],
-        'clicks_per_click': game_state['clicks_per_click']
-    })
+    return JsonResponse({'clicks': game_state['clicks'], 'clicks_per_click': game_state['clicks_per_click']})
 
 @csrf_exempt
 @require_POST
 def purchase_upgrade(request):
-    """Purchase an upgrade"""
     data = json.loads(request.body)
     upgrade_name = data.get('upgrade_name')
-    
-    # Find the upgrade
+
     upgrade = next((u for u in UPGRADES if u['name'] == upgrade_name), None)
-    
     if not upgrade:
         return JsonResponse({'error': 'Upgrade not found'}, status=400)
-    
-    # Check if already purchased
-    if upgrade_name in game_state['upgrades_purchased']:
-        return JsonResponse({'error': 'Already purchased'}, status=400)
-    
-    # Check if user has enough clicks
-    if game_state['clicks'] < upgrade['cost']:
+
+    # Check previous upgrade for lock
+    idx = UPGRADES.index(upgrade)
+    if idx > 0:
+        prev = UPGRADES[idx-1]['name']
+        if game_state['upgrades'].get(prev, 0) == 0:
+            return JsonResponse({'error': f"{upgrade_name} is locked. Purchase previous upgrade first."}, status=400)
+
+    level = game_state['upgrades'].get(upgrade_name, 0)
+    cost = int(upgrade['base_cost'] * (1.5 ** level))
+    if game_state['clicks'] < cost:
         return JsonResponse({'error': 'Not enough clicks'}, status=400)
-    
-    # Purchase the upgrade
-    game_state['clicks'] -= upgrade['cost']
+
+    # Purchase upgrade
+    game_state['clicks'] -= cost
     game_state['clicks_per_click'] += upgrade['multiplier']
-    game_state['upgrades_purchased'].append(upgrade_name)
-    
+    game_state['upgrades'][upgrade_name] = level + 1
+    game_state['notifications'].append(f"✅ {upgrade_name} Level {level + 1} purchased!")
+
+    next_cost = int(upgrade['base_cost'] * (1.5 ** (level + 1)))
+
     return JsonResponse({
         'clicks': game_state['clicks'],
         'clicks_per_click': game_state['clicks_per_click'],
-        'purchased': upgrade_name
+        'upgrade': upgrade_name,
+        'level': level + 1,
+        'next_cost': next_cost,
+        'notifications': game_state['notifications'][-1:]
+    })
+
+@csrf_exempt
+def reset(request):
+    game_state['clicks'] = 0
+    game_state['clicks_per_click'] = 1
+    game_state['upgrades'] = {}
+    game_state['notifications'] = []
+    return JsonResponse({'clicks': 0, 'clicks_per_click': 1})
+
+@csrf_exempt
+def prestige(request):
+    # Can only prestige if all upgrades purchased
+    if any(game_state['upgrades'].get(u['name'], 0) == 0 for u in UPGRADES):
+        return JsonResponse({'error': 'Purchase all upgrades before prestiging.'}, status=400)
+
+    game_state['clicks'] = 0
+    game_state['clicks_per_click'] = int(game_state['clicks_per_click'] * 1.1)
+    game_state['upgrades'] = {}
+    game_state['notifications'].append("✨ Prestige activated! Click power increased!")
+    return JsonResponse({
+        'clicks': game_state['clicks'],
+        'clicks_per_click': game_state['clicks_per_click'],
+        'notifications': game_state['notifications'][-1:]
     })
