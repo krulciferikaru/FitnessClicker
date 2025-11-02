@@ -192,17 +192,6 @@ function updateUpgradeHighlights(clicks){
   const allPurchased = upgrades.every(u=>parseInt(u.dataset.level) > 0);
   prestigeBtn.disabled = !allPurchased;
 }
-
-// call this after each click or upgrade purchase
-document.getElementById("clickButton").addEventListener("click", ()=>{
-  fetch("/click/", {method:"POST", headers:{"X-CSRFToken":getCookie("csrftoken")}})
-    .then(res=>res.json())
-    .then(data=>{
-      clickCountEl.textContent = data.clicks;
-      clickPowerEl.textContent = data.clicks_per_click;
-      updateUpgradeHighlights(data.clicks);
-    });
-});
 </script>
 
 </body>
