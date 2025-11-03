@@ -1,198 +1,340 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Fitness Clicker</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
-<style>
-  body { font-family: 'Press Start 2P', cursive; }
-  .floating { position: absolute; font-weight: bold; animation: float 1s ease-out forwards; pointer-events: none; }
-  @keyframes float { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-50px); } }
-</style>
-</head>
-<body class="bg-black min-h-screen flex flex-col items-center justify-center p-6 text-white">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fitness Clicker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Press Start 2P", cursive;
+      }
+      .floating {
+        position: absolute;
+        font-weight: bold;
+        animation: float 1s ease-out forwards;
+        pointer-events: none;
+      }
+      @keyframes float {
+        0% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-50px);
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="bg-black text-white min-h-screen flex flex-col items-center justify-center p-6"
+  >
+    <!-- Title -->
+    <h1 class="text-4xl mb-8 text-yellow-400">FITNESS CLICKER</h1>
 
-<h1 class="text-4xl mb-6 text-yellow-400">FITNESS CLICKER</h1>
+    <!-- Stats -->
+    <div
+      class="bg-gray-900 w-80 p-4 rounded-xl border-4 border-yellow-400 text-center shadow-lg mb-8"
+    >
+      <div class="text-xl mb-2 text-green-400">
+        CLICKS: <span id="clickCount">{{ clicks }}</span>
+      </div>
+      <div class="text-md text-pink-400">
+        CLICKS PER CLICK: <span id="clickPower">{{ clicks_per_click }}</span>
+      </div>
+    </div>
 
-<div class="text-xl mb-2 text-green-400">CLICKS: <span id="clickCount">{{ clicks }}</span></div>
-<div class="text-md mb-6 text-pink-400">CLICKS PER CLICK: <span id="clickPower">{{ clicks_per_click }}</span></div>
+    <!-- Main Game Layout -->
+    <div
+      class="flex flex-row justify-center items-start gap-10 w-full max-w-7xl"
+    >
+      <!-- LEFT: Player + Click Button -->
+      <div class="flex flex-col items-center justify-center space-y-6">
+        <img
+          id="playerImage"
+          src="/static/images/belly1.png"
+          alt="Player"
+          class="w-72 h-72 object-cover rounded-xl border-4 border-yellow-400 shadow-lg transition-all duration-700"
+        />
+        <button
+          id="clickButton"
+          class="bg-red-600 hover:bg-red-700 active:scale-95 transition-transform rounded-lg p-6 shadow-lg text-lg"
+        >
+          CLICK!
+        </button>
+      </div>
 
-<button id="clickButton" class="bg-red-600 hover:bg-red-700 active:scale-95 transition-transform rounded-lg p-6 shadow-lg text-lg mb-8">
-  CLICK!
-</button>
+      <!-- RIGHT: Upgrades + Notifications (SIDE BY SIDE) -->
+      <div class="flex flex-row gap-6">
+        <!-- Upgrades -->
+        <div
+          class="bg-gray-900 w-[420px] rounded-lg border-4 border-blue-400 shadow-md overflow-hidden"
+        >
+          <div
+            class="bg-blue-600 text-white px-4 py-2 text-center text-lg border-b-2 border-blue-400"
+          >
+            UPGRADES
+          </div>
+          <div id="upgrades" class="p-4 flex flex-col gap-3">
+            {% for upgrade in upgrades %}
+            <div
+              class="upgrade-item border-2 rounded-md p-3 flex items-center gap-3 transition transform hover:scale-105 {% if upgrade.level == 0 and forloop.first == False %}opacity-50 pointer-events-none{% endif %}"
+              data-cost="{{ upgrade.cost }}"
+              data-level="{{ upgrade.level }}"
+              data-name="{{ upgrade.name }}"
+            >
+              <div class="flex flex-col text-white">
+                <span class="font-bold"
+                  >{{ upgrade.name }} (Level {{ upgrade.level }})</span
+                >
+                <span class="text-red-500 text-sm"
+                  >COST: {{ upgrade.cost }}</span
+                >
+                <span class="text-green-400 text-sm"
+                  >+{{ upgrade.multiplier }} PER CLICK</span
+                >
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
 
-<div class="flex flex-row gap-6 w-full max-w-5xl justify-center">
-  <!-- Upgrades -->
-  <div class="w-96 bg-gray-900 rounded-lg border-4 border-blue-400 shadow-md overflow-hidden">
-    <div class="bg-blue-600 text-white px-4 py-2 text-center text-lg border-b-2 border-blue-400">UPGRADES</div>
-    <div id="upgrades" class="p-4 flex flex-col gap-3">
-      {% for upgrade in upgrades %}
-      <div class="upgrade-item border-2 rounded-md p-3 flex items-center gap-3 transition transform hover:scale-105
-                  {% if upgrade.level == 0 and forloop.first == False %}opacity-50 pointer-events-none{% endif %}"
-           data-cost="{{ upgrade.cost }}" data-name="{{ upgrade.name }}">
-        <img src="/static/icons/{{ upgrade.icon }}" class="w-8 h-8"/>
-        <div class="flex flex-col text-white">
-          <span class="font-bold">{{ upgrade.name }} (Level {{ upgrade.level }})</span>
-          <span class="text-red-500 text-sm">COST: {{ upgrade.cost }}</span>
-          <span class="text-green-400 text-sm">+{{ upgrade.multiplier }} PER CLICK</span>
+        <!-- Notifications -->
+        <div
+          class="w-80 bg-gray-900 rounded-lg border-4 border-purple-400 shadow-md p-4"
+        >
+          <div
+            class="bg-purple-600 text-white px-4 py-2 text-center text-lg border-b-2 border-purple-400"
+          >
+            NOTIFICATIONS
+          </div>
+          <div
+            id="notifications"
+            class="flex flex-col gap-2 mt-2 max-h-64 overflow-y-auto"
+          >
+            {% for note in notifications %}
+            <div class="text-yellow-300 text-sm">{{ note }}</div>
+            {% endfor %}
+          </div>
         </div>
       </div>
-      {% endfor %}
     </div>
-  </div>
 
-  <!-- Notifications -->
-  <div class="w-96 bg-gray-900 rounded-lg border-4 border-purple-400 shadow-md p-4">
-    <div class="bg-purple-600 text-white px-4 py-2 text-center text-lg border-b-2 border-purple-400">NOTIFICATIONS</div>
-    <div id="notifications" class="flex flex-col gap-2 mt-2">
-      {% for note in notifications %}
-      <div class="text-yellow-300 text-sm">{{ note }}</div>
-      {% endfor %}
+    <!-- Bottom Buttons -->
+    <div class="flex gap-4 mt-8">
+      <button
+        onclick="resetGame()"
+        class="text-sm text-yellow-400 underline hover:text-yellow-200"
+      >
+        RESET
+      </button>
+      <button
+        id="prestigeBtn"
+        onclick="prestigeGame()"
+        class="text-sm text-yellow-400 underline hover:text-yellow-200"
+      >
+        PRESTIGE
+      </button>
+      <a
+        href="{% url 'welcome' %}"
+        class="text-sm text-yellow-400 underline hover:text-yellow-200"
+        >← BACK</a
+      >
     </div>
-  </div>
-</div>
 
-<div class="flex gap-4 mt-6">
-  <button onclick="resetGame()" class="text-sm text-yellow-400 underline hover:text-yellow-200">RESET</button>
-  <button id="prestigeBtn" onclick="prestigeGame()" class="text-sm text-yellow-400 underline hover:text-yellow-200">PRESTIGE</button>
-  <a href="{% url 'welcome' %}" class="text-sm text-yellow-400 underline hover:text-yellow-200">← BACK</a>
-</div>
+    <script>
+      const clickCountEl = document.getElementById("clickCount");
+      const clickPowerEl = document.getElementById("clickPower");
+      const upgradesEl = document.getElementById("upgrades");
+      const notificationsEl = document.getElementById("notifications");
+      const prestigeBtn = document.getElementById("prestigeBtn");
 
-<script>
-const clickCountEl = document.getElementById("clickCount");
-const clickPowerEl = document.getElementById("clickPower");
-const upgradesEl = document.getElementById("upgrades");
-const notificationsEl = document.getElementById("notifications");
-const prestigeBtn = document.getElementById("prestigeBtn");
-
-function getCookie(name){
-  let cookieValue = null;
-  if(document.cookie && document.cookie!==""){
-    const cookies = document.cookie.split(";");
-    for(let i=0;i<cookies.length;i++){
-      const cookie = cookies[i].trim();
-      if(cookie.substring(0,name.length+1)===name+"="){
-        cookieValue = decodeURIComponent(cookie.substring(name.length+1));
-        break;
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+          const cookies = document.cookie.split(";");
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === name + "=") {
+              cookieValue = decodeURIComponent(
+                cookie.substring(name.length + 1)
+              );
+              break;
+            }
+          }
+        }
+        return cookieValue;
       }
-    }
-  }
-  return cookieValue;
-}
 
-// Click button
-document.getElementById("clickButton").addEventListener("click",()=> {
-  fetch("/click/",{method:"POST",headers:{"X-CSRFToken":getCookie("csrftoken")}})
-    .then(res=>res.json())
-    .then(data=>{
-      clickCountEl.textContent=data.clicks;
-      clickPowerEl.textContent=data.clicks_per_click;
+      // Click button
+      document.getElementById("clickButton").addEventListener("click", () => {
+        fetch("/click/", {
+          method: "POST",
+          headers: { "X-CSRFToken": getCookie("csrftoken") },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            clickCountEl.textContent = data.clicks;
+            clickPowerEl.textContent = data.clicks_per_click;
 
-      // Floating click effect
-      const float=document.createElement("div");
-      float.textContent=`+${data.clicks_per_click}`;
-      float.className="floating text-green-400";
-      float.style.left=`${clickButton.offsetLeft + 20 + Math.random()*30}px`;
-      float.style.top=`${clickButton.offsetTop - 20}px`;
-      document.body.appendChild(float);
-      setTimeout(()=>float.remove(),1000);
+            // Floating click effect
+            const float = document.createElement("div");
+            float.textContent = `+${data.clicks_per_click}`;
+            float.className = "floating text-green-400";
+            float.style.left = `${
+              clickButton.offsetLeft + 20 + Math.random() * 30
+            }px`;
+            float.style.top = `${clickButton.offsetTop - 20}px`;
+            document.body.appendChild(float);
+            setTimeout(() => float.remove(), 1000);
 
-      updateUpgradeHighlights(data.clicks);
-    });
-});
+            updateUpgradeHighlights(data.clicks);
+          });
+      });
 
-// Purchase upgrade
-// also call after an upgrade purchase
-function purchaseUpgrade(name){
-  fetch("/purchase_upgrade/",{
-    method:"POST",
-    headers:{"Content-Type":"application/json","X-CSRFToken":getCookie("csrftoken")},
-    body:JSON.stringify({upgrade_name:name})
-  })
-  .then(res=>res.json())
-  .then(data=>{
-    if(data.error){ alert(data.error); return; }
-    clickCountEl.textContent = data.clicks;
-    clickPowerEl.textContent = data.clicks_per_click;
-    addNotification(data.notifications[0]);
+      // Purchase upgrade
+      // also call after an upgrade purchase
+      function purchaseUpgrade(name) {
+        fetch("/purchase_upgrade/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({ upgrade_name: name }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.error) {
+              alert(data.error);
+              return;
+            }
+            clickCountEl.textContent = data.clicks;
+            clickPowerEl.textContent = data.clicks_per_click;
+            addNotification(data.notifications[0]);
 
-    // update level and cost
-    const upgradeDiv = document.querySelector(`.upgrade-item[data-name="${data.upgrade}"]`);
-    upgradeDiv.dataset.level = data.level;
-    upgradeDiv.querySelector("span.font-bold").textContent = `${data.upgrade} (Level ${data.level})`;
-    upgradeDiv.querySelector("span.text-red-500").textContent = `COST: ${data.next_cost}`;
+            // update level and cost
+            const upgradeDiv = document.querySelector(
+              `.upgrade-item[data-name="${data.upgrade}"]`
+            );
+            upgradeDiv.dataset.level = data.level;
+            upgradeDiv.querySelector(
+              "span.font-bold"
+            ).textContent = `${data.upgrade} (Level ${data.level})`;
+            upgradeDiv.querySelector(
+              "span.text-red-500"
+            ).textContent = `COST: ${data.next_cost}`;
 
-    updateUpgradeHighlights(data.clicks);
-  });
-}
+            updateUpgradeHighlights(data.clicks);
+          });
+      }
 
-// initial highlight on page load
-updateUpgradeHighlights(parseInt(clickCountEl.textContent));
+      // initial highlight on page load
+      updateUpgradeHighlights(parseInt(clickCountEl.textContent));
 
-// Floating notifications
-function addNotification(msg){
-  const div=document.createElement("div");
-  div.textContent=msg;
-  div.className="text-yellow-300 text-sm animate-fade";
-  notificationsEl.prepend(div);
-  if(notificationsEl.children.length>5) notificationsEl.removeChild(notificationsEl.lastChild);
-}
+      // Floating notifications
+      function addNotification(msg) {
+        const div = document.createElement("div");
+        div.textContent = msg;
+        div.className = "text-yellow-300 text-sm animate-fade";
+        notificationsEl.prepend(div);
+        if (notificationsEl.children.length > 5)
+          notificationsEl.removeChild(notificationsEl.lastChild);
+      }
 
-// Reset game
-function resetGame(){
-  fetch("/reset/")
-    .then(res=>res.json())
-    .then(data=>{
-      clickCountEl.textContent=data.clicks;
-      clickPowerEl.textContent=data.clicks_per_click;
-      notificationsEl.innerHTML="";
-      location.reload();
-    });
-}
+      // Reset game
+      function resetGame() {
+        fetch("/reset/")
+          .then((res) => res.json())
+          .then((data) => {
+            clickCountEl.textContent = data.clicks;
+            clickPowerEl.textContent = data.clicks_per_click;
+            notificationsEl.innerHTML = "";
+            location.reload();
+          });
+      }
 
-// Prestige
-function prestigeGame(){
-  fetch("/prestige/")
-    .then(res=>res.json())
-    .then(data=>{
-      if(data.error){ alert(data.error); return; }
-      clickCountEl.textContent=data.clicks;
-      clickPowerEl.textContent=data.clicks_per_click;
-      addNotification(data.notifications[0]);
-      location.reload();
-    });
-}
+      // Prestige
+      function prestigeGame() {
+        fetch("/prestige/")
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.error) {
+              alert(data.error);
+              return;
+            }
+            clickCountEl.textContent = data.clicks;
+            clickPowerEl.textContent = data.clicks_per_click;
+            addNotification(data.notifications[0]);
+            location.reload();
+          });
+      }
 
-// Upgrade click events
-document.querySelectorAll(".upgrade-item").forEach(item=>{
-  item.addEventListener("click",()=>purchaseUpgrade(item.dataset.name));
-});
+      // Upgrade click events
+      document.querySelectorAll(".upgrade-item").forEach((item) => {
+        item.addEventListener("click", () =>
+          purchaseUpgrade(item.dataset.name)
+        );
+      });
 
-// Highlight upgrades that can be purchased
-function updateUpgradeHighlights(clicks){
-  const upgrades = Array.from(document.querySelectorAll(".upgrade-item"));
-  upgrades.forEach((item, index) => {
-    const cost = parseInt(item.dataset.cost);
-    const prev = upgrades[index-1];
-    const unlocked = !prev || parseInt(prev.dataset.level) > 0; // previous upgrade purchased
-    if(clicks >= cost && unlocked){
-      // highlight green
-      item.classList.add("border-green-400", "bg-green-900", "cursor-pointer");
-      item.classList.remove("opacity-50", "pointer-events-none");
-    } else if(parseInt(item.dataset.level) == 0) {
-      // lock it if cannot purchase yet
-      item.classList.remove("border-green-400","bg-green-900","cursor-pointer");
-      item.classList.add("opacity-50","pointer-events-none");
-    }
-  });
+      // Highlight upgrades that can be purchased
+      function updateUpgradeHighlights(clicks) {
+        const upgrades = Array.from(document.querySelectorAll(".upgrade-item"));
+        upgrades.forEach((item, index) => {
+          const cost = parseInt(item.dataset.cost);
+          const prev = upgrades[index - 1];
+          const unlocked = !prev || parseInt(prev.dataset.level) > 0; // previous upgrade purchased
+          if (clicks >= cost && unlocked) {
+            // highlight green
+            item.classList.add(
+              "border-green-400",
+              "bg-green-900",
+              "cursor-pointer"
+            );
+            item.classList.remove("opacity-50", "pointer-events-none");
+          } else if (parseInt(item.dataset.level) == 0) {
+            // lock it if cannot purchase yet
+            item.classList.remove(
+              "border-green-400",
+              "bg-green-900",
+              "cursor-pointer"
+            );
+            item.classList.add("opacity-50", "pointer-events-none");
+          }
+        });
 
-  // enable prestige only if all upgrades purchased
-  const allPurchased = upgrades.every(u=>parseInt(u.dataset.level) > 0);
-  prestigeBtn.disabled = !allPurchased;
-}
-</script>
+        // enable prestige only if all upgrades purchased
+        const allPurchased = upgrades.every(
+          (u) => parseInt(u.dataset.level) > 0
+        );
+        prestigeBtn.disabled = !allPurchased;
+      }
 
-</body>
+      function updatePlayerImage(clicks) {
+        const img = document.getElementById("playerImage");
+        if (clicks < 100) img.src = "/static/images/belly1.png";
+        else if (clicks < 500) img.src = "/static/images/belly2.png";
+        else if (clicks < 1500) img.src = "/static/images/belly3.png";
+        else if (clicks < 3000) img.src = "/static/images/belly4.png";
+        else img.src = "/static/images/belly5.png";
+      }
+
+      // Make sure player image updates whenever clicks change
+      document.getElementById("clickButton").addEventListener("click", () => {
+        const clicks = parseInt(clickCountEl.textContent);
+        updatePlayerImage(clicks);
+      });
+
+      // Also update after upgrades or prestige
+      function refreshStats(clicks) {
+        updatePlayerImage(clicks);
+        updateUpgradeHighlights(clicks);
+      }
+    </script>
+  </body>
 </html>

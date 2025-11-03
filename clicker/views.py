@@ -8,17 +8,17 @@ import json
 game_state = {
     'clicks': 0,
     'clicks_per_click': 1,
-    'upgrades': {},  # {'Yoga Mat': 1, ...}
+    'upgrades': {}, 
     'notifications': []
 }
 
 # Upgrades list
 UPGRADES = [
-    {'name': 'Yoga Mat', 'base_cost': 25, 'multiplier': 2, 'icon': 'yoga.png'},
-    {'name': 'Jump Rope', 'base_cost': 50, 'multiplier': 4, 'icon': 'rope.png'},
-    {'name': 'Dumbbells', 'base_cost': 100, 'multiplier': 8, 'icon': 'dumbbell.png'},
-    {'name': 'Kettlebell', 'base_cost': 200, 'multiplier': 16, 'icon': 'kettlebell.png'},
-    {'name': 'Barbell', 'base_cost': 400, 'multiplier': 32, 'icon': 'barbell.png'},
+    {'name': 'Yoga Mat', 'base_cost': 25, 'multiplier': 2},
+    {'name': 'Jump Rope', 'base_cost': 50, 'multiplier': 4},
+    {'name': 'Dumbbells', 'base_cost': 100, 'multiplier': 8},
+    {'name': 'Kettlebell', 'base_cost': 200, 'multiplier': 16},
+    {'name': 'Barbell', 'base_cost': 400, 'multiplier': 32},
 ]
 
 def welcome_view(request):
