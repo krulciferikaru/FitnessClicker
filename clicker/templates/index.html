@@ -136,7 +136,7 @@
       <button
         id="prestigeBtn"
         onclick="prestigeGame()"
-        class="text-sm text-yellow-400 underline hover:text-yellow-200"
+        class="text-sm text-yellow-400 underline hover:text-yellow-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-yellow-400 transition"
       >
         PRESTIGE
       </button>
@@ -308,11 +308,23 @@
           }
         });
 
-        // enable prestige only if all upgrades purchased
+        // Enable prestige only if all upgrades purchased
         const allPurchased = upgrades.every(
           (u) => parseInt(u.dataset.level) > 0
         );
         prestigeBtn.disabled = !allPurchased;
+
+        // Change color when available
+        if (allPurchased) {
+          prestigeBtn.classList.remove("opacity-40", "cursor-not-allowed");
+          prestigeBtn.classList.add("text-green-400", "hover:text-green-200");
+        } else {
+          prestigeBtn.classList.add("opacity-40", "cursor-not-allowed");
+          prestigeBtn.classList.remove(
+            "text-green-400",
+            "hover:text-green-200"
+          );
+        }
       }
 
       function updatePlayerImage(clicks) {
